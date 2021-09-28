@@ -1,0 +1,24 @@
+{
+  "name": "demo-uploader",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@types/express": "^4.17.13",
+    "busboy": "^0.3.1",
+    "express": "^4.17.1",
+    "googleapis": "39"
+  },
+  "devDependencies": {
+    "@types/busboy": "^0.2.4",
+    "dotenv": "^10.0.0",
+    "ts-node-dev": "^1.1.8",
+    "typescript": "^4.4.3"
+  },
+  "scripts": {
+    "dev": "ts-node-dev ./src/app.ts",
+    "start": "tsc && node ./dist/app.js"
+  },
+  "repository": "https://github.com/jarrilla/demo-uploader.git",
+  "author": "jarrilla <jarrilla.services@gmail.com>"
+}
