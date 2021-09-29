@@ -37,7 +37,7 @@
 
                 <v-row>
                      <v-col cols="12" class="col-lg-6 col-sm-12">
-                         <vue-dropzone ref="myVueDropzone" id="dropzoneQuoteOptions" v-on:vdropzone-success="quoteFileUploadSuccess" class="dropzone" :options="dropzoneQuoteOptions"></vue-dropzone>
+                         <vue-dropzone ref="dropzoneQuoteOptions" id="dropzoneQuoteOptions" v-on:vdropzone-success="quoteFileUploadSuccess" class="dropzone" :options="dropzoneQuoteOptions"></vue-dropzone>
                           <v-alert
                             dense
                             outlined
@@ -49,7 +49,7 @@
                             </v-alert>
                      </v-col>
                      <v-col cols="12" class="col-lg-6 col-sm-12">
-                         <vue-dropzone ref="myVueDropzone" id="dropzoneRFQOptions" v-on:vdropzone-success="requirementRFQSuccess" class="dropzone" :options="dropzoneRFQOptions"></vue-dropzone>
+                         <vue-dropzone ref="dropzoneRFQOptions" id="dropzoneRFQOptions" v-on:vdropzone-success="requirementRFQSuccess" class="dropzone" :options="dropzoneRFQOptions"></vue-dropzone>
                      </v-col>
                 </v-row>
 
@@ -130,17 +130,19 @@
         recapchaToken: null,
         dropzoneQouteFiles: [],
         dropzoneQuoteOptions: {
-            url: 'https://httpbin.org/post',
-            thumbnailWidth: 150,
+            url: 'http://localhost:4000/upload',
+            thumbnailWidth: 75,
             maxFilesize: 100,
+            autoProcessQueue: false,
             acceptedFiles: '.step,.stp,.sldprt,.stl,.dxf,.ipt,.x_t,.x_b,.3mf,.3dxml,.catpart,.prt,.sat,.pdf',
             headers: { "My-Awesome-Header": "header value" },
             dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> Upload drawings or art files that you want to quoted. <strong>Allowed file-types:</strong> STEP, STP, SLDPRT, STL, DXF, IPT, X_T, X_B, 3MF, 3DXML, CATPART, PRT, SAT, PDF"
         },
         dropzoneRFQOptions: {
-            url: 'https://httpbin.org/post',
-            thumbnailWidth: 150,
+            url: 'http://localhost:4000/upload',
+            thumbnailWidth: 75,
             maxFilesize: 100,
+            autoProcessQueue: false,
             acceptedFiles: '.pdf,.docx,.doc,.xlsx,.xls,.csv',
             headers: { "My-Awesome-Header": "header value" },
             dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> If you have an RFQ file or any project specifications, upload them here. <strong>Allowed file-types:</strong> PDF, DOCX, DOC, XLSX, XLS, CSV"
@@ -151,7 +153,7 @@
     },
     methods: {
         validate () {
-            if(this.dropzoneQouteFiles.length == 0){
+            if(this.$refs.dropzoneQuoteOptions.dropzone.files.length == 0){
                 this.isDrawingFileNotUploaded = true
             }
             if(this.isRecaptchaValidate == false){
@@ -159,18 +161,22 @@
             }
             this.$refs.form.validate()
             if(this.$refs.form.validate() && !this.isDrawingFileNotUploaded && this.isRecaptchaValidate){
+                this.$refs.dropzoneQuoteOptions.processQueue()
+                this.$refs.dropzoneRFQOptions.processQueue()
                 console.log('Form submitted')
             }
         },
         reset () {
             this.isDrawingFileNotUploaded = false
+            this.$refs.dropzoneQuoteOptions.removeAllFiles()
+            this.$refs.dropzoneRFQOptions.removeAllFiles()
             this.$refs.form.reset()
         },
         quoteFileUploadSuccess(file, response){
-
+            console.log(file, response)
         },
         requirementRFQSuccess(file, response){
-
+            console.log(file, response)
         },
         verifyCallback(response){
             if(response) {

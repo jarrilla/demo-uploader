@@ -2,9 +2,12 @@ import express from 'express';
 import Busboy from 'busboy'
 import fs from 'fs';
 import path from 'path';
+var cors = require('cors')
 
 const app = express();
 app.use( express.json() );
+
+app.use(cors())
 
 const ALLOWED_FILE_TYPES = [
   'STEP',
@@ -80,7 +83,7 @@ app.post('/upload', (req, res) => {
       });
   
       // pipe to filesystem
-      const saveTo = path.join( __dirname, fieldName );
+      const saveTo = path.join( __dirname, 'uploads', fieldName+'.'+ext );
       file.pipe( fs.createWriteStream(saveTo) );
     });
   
@@ -92,7 +95,7 @@ app.post('/upload', (req, res) => {
       res.end( JSON.stringify({
         success: !ignoredFiles.length,
         ignoredFiles
-      }) );
+      }));
     });
   
     return req.pipe(busboy);
