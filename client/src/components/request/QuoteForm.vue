@@ -139,7 +139,14 @@
             autoProcessQueue: false,
             acceptedFiles: '.step,.stp,.sldprt,.stl,.dxf,.ipt,.x_t,.x_b,.3mf,.3dxml,.catpart,.prt,.sat,.pdf',
             headers: { "My-Awesome-Header": "header value" },
-            dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> Upload drawings or part files that you want to quoted. <br/><strong>Allowed file-types:</strong> STEP, STP, SLDPRT, STL, DXF, IPT, X_T, X_B, 3MF, 3DXML, CATPART, PRT, SAT, PDF"
+            dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> Upload drawings or part files that you want to quoted. <br/><strong>Allowed file-types:</strong> STEP, STP, SLDPRT, STL, DXF, IPT, X_T, X_B, 3MF, 3DXML, CATPART, PRT, SAT, PDF",
+            init: function() {    
+                this.on("complete", 
+                    function(file) { 
+                        console.log(file)
+                    }
+                );
+            }
         },
         dropzoneRFQOptions: {
             url: 'http://localhost:4000/upload',
@@ -148,7 +155,14 @@
             autoProcessQueue: false,
             acceptedFiles: '.pdf,.docx,.doc,.xlsx,.xls,.csv',
             headers: { "My-Awesome-Header": "header value" },
-            dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> If you have an RFQ file or any project specifications, upload them here. <br/><strong>Allowed file-types:</strong> PDF, DOCX, DOC, XLSX, XLS, CSV"
+            dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> If you have an RFQ file or any project specifications, upload them here. <br/><strong>Allowed file-types:</strong> PDF, DOCX, DOC, XLSX, XLS, CSV",
+            init: function() {    
+                this.on("complete", 
+                    function(file) { 
+                        console.log(file)
+                    }
+                );
+            }
         }
     }),
     mounted: () => {
@@ -176,12 +190,12 @@
         requirementRFQSuccess(file, response){
             console.log(file, response)
         },
-        async verifyCallback(response){
+        verifyCallback(response){
             if(response) {
                 this.recapchaToken = response
                 this.dialog = false
-                await this.$refs.dropzoneQuoteOptions.processQueue()
-                await this.$refs.dropzoneRFQOptions.processQueue()
+                this.$refs.dropzoneQuoteOptions.processQueue()
+                this.$refs.dropzoneRFQOptions.processQueue()
                 console.log('Form submitted')
             }
         }
