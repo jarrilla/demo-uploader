@@ -11,5 +11,8 @@
     components: {
       QuoteForm,
     },
+    mounted(){
+      document.title = "RFQ Module"
+    }
   }
 </script>
