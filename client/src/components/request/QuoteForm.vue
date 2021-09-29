@@ -36,7 +36,7 @@
                 <vue-phone-number-input id="phone_number" v-model="phone" size="lg"/>
 
                 <v-row>
-                     <v-col cols="6" class="col-lg-6 col-sm-12">
+                     <v-col cols="12" class="col-lg-6 col-sm-12">
                          <vue-dropzone ref="myVueDropzone" id="dropzoneQuoteOptions" v-on:vdropzone-success="quoteFileUploadSuccess" class="dropzone" :options="dropzoneQuoteOptions"></vue-dropzone>
                           <v-alert
                             dense
@@ -48,7 +48,7 @@
                             upload drawings or art files that you want to quoted is required
                             </v-alert>
                      </v-col>
-                     <v-col cols="6" class="col-lg-6 col-sm-12">
+                     <v-col cols="12" class="col-lg-6 col-sm-12">
                          <vue-dropzone ref="myVueDropzone" id="dropzoneRFQOptions" v-on:vdropzone-success="requirementRFQSuccess" class="dropzone" :options="dropzoneRFQOptions"></vue-dropzone>
                      </v-col>
                 </v-row>
