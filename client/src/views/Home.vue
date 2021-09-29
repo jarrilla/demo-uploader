@@ -1,15 +1,15 @@
 <template>
-  <hello-world />
+  <quote-form />
 </template>
 
 <script>
-  import HelloWorld from '../components/HelloWorld'
+  import QuoteForm from '../components/request/QuoteForm.vue'
 
   export default {
     name: 'Home',
 
     components: {
-      HelloWorld,
+      QuoteForm,
     },
   }
 </script>
