@@ -1,5 +1,22 @@
 <template>
   <v-container>
+    <v-row justify="center">
+        <v-dialog
+        v-model="dialog"
+        max-width="380"
+        >
+        <v-card>
+            <v-card-title class="text-h6">
+            Recaptcha
+            </v-card-title>
+
+            <vue-recaptcha class="recaptcha_style" @verify="verifyCallback" sitekey="6LcLc5kcAAAAAC9YNLY8IEMz3Q44GewMMHoNSiwS" :loadRecaptchaScript="true"></vue-recaptcha>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+            </v-card-actions>    
+        </v-card>
+        </v-dialog>
+    </v-row>  
     <v-row class="text-center">
         <v-col cols="8" class="offset-2">
               <v-form
@@ -72,19 +89,6 @@
                         Reset
                         </v-btn>
                     </v-col>
-                    <v-col cols="12">
-                        <vue-recaptcha class="recaptcha_style" @verify="verifyCallback" sitekey="6LcLc5kcAAAAAC9YNLY8IEMz3Q44GewMMHoNSiwS" :loadRecaptchaScript="true"></vue-recaptcha>
-                        <v-alert
-                            id="recatcha_alert_msg"
-                            dense
-                            outlined
-                            type="error"
-                            class="mt-2"
-                            v-if="recatchValidationMessage"
-                            >
-                            please complete recaptcha
-                            </v-alert>
-                    </v-col>
                 </v-row>
             </v-form>
         </v-col>   
@@ -107,6 +111,7 @@
         VueRecaptcha 
     },
     data: () => ({
+        dialog: false,
         valid: true,
         company: '',
         companyRules: [
@@ -125,8 +130,6 @@
         ],
         phone: '',
         isDrawingFileNotUploaded: false,
-        recatchValidationMessage: false,
-        isRecaptchaValidate: false,
         recapchaToken: null,
         dropzoneQouteFiles: [],
         dropzoneQuoteOptions: {
@@ -136,7 +139,7 @@
             autoProcessQueue: false,
             acceptedFiles: '.step,.stp,.sldprt,.stl,.dxf,.ipt,.x_t,.x_b,.3mf,.3dxml,.catpart,.prt,.sat,.pdf',
             headers: { "My-Awesome-Header": "header value" },
-            dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> Upload drawings or art files that you want to quoted. <strong>Allowed file-types:</strong> STEP, STP, SLDPRT, STL, DXF, IPT, X_T, X_B, 3MF, 3DXML, CATPART, PRT, SAT, PDF"
+            dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> Upload drawings or part files that you want to quoted. <br/><strong>Allowed file-types:</strong> STEP, STP, SLDPRT, STL, DXF, IPT, X_T, X_B, 3MF, 3DXML, CATPART, PRT, SAT, PDF"
         },
         dropzoneRFQOptions: {
             url: 'http://localhost:4000/upload',
@@ -145,7 +148,7 @@
             autoProcessQueue: false,
             acceptedFiles: '.pdf,.docx,.doc,.xlsx,.xls,.csv',
             headers: { "My-Awesome-Header": "header value" },
-            dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> If you have an RFQ file or any project specifications, upload them here. <strong>Allowed file-types:</strong> PDF, DOCX, DOC, XLSX, XLS, CSV"
+            dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> If you have an RFQ file or any project specifications, upload them here. <br/><strong>Allowed file-types:</strong> PDF, DOCX, DOC, XLSX, XLS, CSV"
         }
     }),
     mounted: () => {
@@ -156,14 +159,9 @@
             if(this.$refs.dropzoneQuoteOptions.dropzone.files.length == 0){
                 this.isDrawingFileNotUploaded = true
             }
-            if(this.isRecaptchaValidate == false){
-                this.recatchValidationMessage = true
-            }
             this.$refs.form.validate()
-            if(this.$refs.form.validate() && !this.isDrawingFileNotUploaded && this.isRecaptchaValidate){
-                this.$refs.dropzoneQuoteOptions.processQueue()
-                this.$refs.dropzoneRFQOptions.processQueue()
-                console.log('Form submitted')
+            if(this.$refs.form.validate() && !this.isDrawingFileNotUploaded){
+                this.dialog = true 
             }
         },
         reset () {
@@ -178,11 +176,13 @@
         requirementRFQSuccess(file, response){
             console.log(file, response)
         },
-        verifyCallback(response){
+        async verifyCallback(response){
             if(response) {
                 this.recapchaToken = response
-                this.isRecaptchaValidate = true
-                this.recatchValidationMessage = false
+                this.dialog = false
+                await this.$refs.dropzoneQuoteOptions.processQueue()
+                await this.$refs.dropzoneRFQOptions.processQueue()
+                console.log('Form submitted')
             }
         }
     },
