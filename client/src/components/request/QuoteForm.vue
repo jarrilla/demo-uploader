@@ -98,9 +98,9 @@
 
 <script>
   import VuePhoneNumberInput from 'vue-phone-number-input';
-  import 'vue-phone-number-input/dist/vue-phone-number-input.css';
+  import '../../../custom/css/vue-phone-number-input.css';
   import vue2Dropzone from 'vue2-dropzone'
-  import 'vue2-dropzone/dist/vue2Dropzone.min.css'
+  import '../../../custom/css/vue2Dropzone.min.css'
   import VueRecaptcha from 'vue-recaptcha';
 
   export default {
