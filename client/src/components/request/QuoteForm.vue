@@ -116,12 +116,10 @@
         company: '',
         companyRules: [
             v => !!v || 'Company is required',
-            v => (v && v.length <= 40) || 'Company must be less than 10 characters',
         ],
         name: '',
         nameRules: [
             v => !!v || 'Name is required',
-            v => (v && v.length <= 20) || 'Name must be less than 10 characters',
         ],
         email: '',
         emailRules: [
@@ -141,7 +139,7 @@
             headers: {
                 
             },
-            dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> Upload drawings or part files that you want to quoted. <br/><strong>Allowed file-types:</strong> STEP, STP, SLDPRT, STL, DXF, IPT, X_T, X_B, 3MF, 3DXML, CATPART, PRT, SAT, PDF",
+            dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> Upload drawings or part files that you want quoted. <br/><strong>Allowed file-types:</strong> STEP, STP, SLDPRT, STL, DXF, IPT, X_T, X_B, 3MF, 3DXML, CATPART, PRT, SAT, PDF",
             init: function() {    
                 this.on("complete", 
                     function(file) { 
