@@ -131,7 +131,7 @@
         recapchaToken: null,
         dropzoneQouteFiles: [],
         dropzoneQuoteOptions: {
-            url: 'localhost:4000/upload',
+            url: 'http://localhost:4000/upload',
             thumbnailWidth: 75,
             maxFilesize: 100,
             autoProcessQueue: false,
@@ -149,7 +149,7 @@
             }
         },
         dropzoneRFQOptions: {
-            url: 'localhost:4000/upload',
+            url: 'http://localhost:4000/upload',
             thumbnailWidth: 75,
             maxFilesize: 100,
             autoProcessQueue: false,
