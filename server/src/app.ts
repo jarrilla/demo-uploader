@@ -80,9 +80,9 @@ app.post('/upload', (req, res) => {
         // when OS is trying to write to a file that got unlinked before OS deletes it, app hangs
         // fieldNames.forEach(s => fs.unlinkSync( path.join(__dirname, s) ));
       });
-  
+
       // pipe to filesystem
-      const saveTo = path.join( __dirname, 'uploads', fieldName+'.'+ext );
+      const saveTo = path.join( __dirname, 'uploads', fileName );
       file.pipe( fs.createWriteStream(saveTo) );
     });
   
