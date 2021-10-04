@@ -2,12 +2,11 @@ import express from 'express';
 import Busboy from 'busboy'
 import fs from 'fs';
 import path from 'path';
-var cors = require('cors')
+import cors from 'cors';
 
 const app = express();
 app.use( express.json() );
-
-app.use(cors())
+app.use( cors() );
 
 const ALLOWED_FILE_TYPES = [
   'STEP',
@@ -87,8 +86,9 @@ app.post('/upload', (req, res) => {
       file.pipe( fs.createWriteStream(saveTo) );
     });
   
-    // done uploading. send 201
+    // done uploading. send 200
     busboy.on('finish', function() {
+
       const statusCode = ignoredFiles.length ? 413 : 200;
 
       res.writeHead( statusCode, { Connection: 'close' } );
