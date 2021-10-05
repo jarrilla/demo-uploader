@@ -5,15 +5,55 @@
         v-model="dialog"
         max-width="380"
         >
+            <v-card>
+                <v-card-title class="text-h6">
+                Recaptcha
+                </v-card-title>
+                <vue-recaptcha class="recaptcha_style" ref="recaptcha" @verify="verifyCallback" sitekey="6LcLc5kcAAAAAC9YNLY8IEMz3Q44GewMMHoNSiwS" :loadRecaptchaScript="true"></vue-recaptcha>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                </v-card-actions>    
+            </v-card>
+        </v-dialog>
+        <v-dialog
+            v-model="isLoading"
+            persistent
+            width="300"
+            >
+            <v-card
+                color="primary"
+                dark
+            >
+                <v-card-text>
+                Loading ...
+                <v-progress-linear
+                    indeterminate
+                    color="white"
+                    class="mb-0"
+                ></v-progress-linear>
+                </v-card-text>
+            </v-card>
+        </v-dialog>
+        <v-dialog
+        v-model="isSuccess"
+        max-width="290"
+        >
         <v-card>
-            <v-card-title class="text-h6">
-            Recaptcha
-            </v-card-title>
+            <v-card-text class="pt-15 text-center">
+                <strong>RFQ Submitted</strong>
+            </v-card-text>
 
-            <vue-recaptcha class="recaptcha_style" @verify="verifyCallback" sitekey="6LcLc5kcAAAAAC9YNLY8IEMz3Q44GewMMHoNSiwS" :loadRecaptchaScript="true"></vue-recaptcha>
             <v-card-actions>
-                <v-spacer></v-spacer>
-            </v-card-actions>    
+            <v-spacer></v-spacer>
+
+            <v-btn
+                color="green darken-1"
+                text
+                @click="reset"
+            >
+                Okay
+            </v-btn>
+            </v-card-actions>
         </v-card>
         </v-dialog>
     </v-row>  
@@ -50,7 +90,16 @@
                 required
                 ></v-text-field>
 
-                <vue-phone-number-input id="phone_number" v-model="phone" size="lg"/>
+                <vue-phone-number-input id="phone_number" @update="onUpdate" v-model="phone" size="lg"/>
+                <v-alert
+                            dense
+                            outlined
+                            type="error"
+                            class="mt-2 text-left"
+                            v-if="!isPhoneNoValid"
+                            >
+                            phone no is invalid according to selected country
+                </v-alert>
 
                 <v-row>
                      <v-col cols="12" class="col-lg-6 col-sm-12">
@@ -74,7 +123,7 @@
                     <v-col cols="12" class="mt-5 text-center">
                         <v-btn
                         :disabled="!valid"
-                        color="success"
+                        color="primary"
                         class="mr-4"
                         @click="validate"
                         >
@@ -97,6 +146,7 @@
 </template>
 
 <script>
+  let self;
   import VuePhoneNumberInput from 'vue-phone-number-input';
   import '../../../custom/css/vue-phone-number-input.css';
   import vue2Dropzone from 'vue2-dropzone'
@@ -110,10 +160,16 @@
         vueDropzone: vue2Dropzone,
         VueRecaptcha 
     },
+    created: function () {
+        self = this;
+    },
     data: () => ({
         dialog: false,
         valid: true,
+        isLoading: false,
+        isSuccess: false,
         company: '',
+        personalInfoID: '',
         companyRules: [
             v => !!v || 'Company is required',
         ],
@@ -126,30 +182,46 @@
             v => !!v || 'E-mail is required',
             v => /.+@.+\..+/.test(v) || 'E-mail must be valid',
         ],
+        phoneDetails: {},
+        isPhoneNoValid: true,
         phone: '',
         isDrawingFileNotUploaded: false,
         recapchaToken: null,
         dropzoneQouteFiles: [],
         dropzoneQuoteOptions: {
-            url: 'http://localhost:4000/upload',
+            url: 'url',
             thumbnailWidth: 75,
             maxFilesize: 100,
             autoProcessQueue: false,
             acceptedFiles: '.step,.stp,.sldprt,.stl,.dxf,.ipt,.x_t,.x_b,.3mf,.3dxml,.catpart,.prt,.sat,.pdf',
             headers: {
-                
             },
+            addRemoveLinks: true,
             dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> Upload drawings or part files that you want quoted. <br/><strong>Allowed file-types:</strong> STEP, STP, SLDPRT, STL, DXF, IPT, X_T, X_B, 3MF, 3DXML, CATPART, PRT, SAT, PDF",
-            init: function() {    
+            init: function() {
+                this.on("processing", function (file) {
+                    self.$refs.dropzoneQuoteOptions.setOption('url', `http://localhost:4000/upload/${self.personalInfoID}`);
+                });
+                this.on("addedfile", 
+                    function(file) { 
+                        self.isDrawingFileNotUploaded = false
+                    }
+                );    
                 this.on("complete", 
                     function(file) { 
+                        if(self.quoteFileCount === self.$refs.dropzoneQuoteOptions.dropzone.files.length && self.rfqFileCount === self.$refs.dropzoneRFQOptions.dropzone.files.length){
+                            self.isLoading = false 
+                            self.isSuccess = true 
+                        }
                         console.log(file)
                     }
                 );
             }
         },
+        quoteFileCount: 0,
+        rfqFileCount: 0,
         dropzoneRFQOptions: {
-            url: 'http://localhost:4000/upload',
+            url: 'url',
             thumbnailWidth: 75,
             maxFilesize: 100,
             autoProcessQueue: false,
@@ -157,10 +229,18 @@
             headers: {
                 
             },
+            addRemoveLinks: true,
             dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> If you have an RFQ file or any project specifications, upload them here. <br/><strong>Allowed file-types:</strong> PDF, DOCX, DOC, XLSX, XLS, CSV",
-            init: function() {    
+            init: function() { 
+                this.on("processing", function (file) {     
+                    self.$refs.dropzoneRFQOptions.setOption('url', `http://localhost:4000/upload/${self.personalInfoID}`);
+                });
                 this.on("complete", 
                     function(file) { 
+                        if(self.quoteFileCount === self.$refs.dropzoneQuoteOptions.dropzone.files.length && self.rfqFileCount === self.$refs.dropzoneRFQOptions.dropzone.files.length){
+                            self.isLoading = false 
+                            self.isSuccess = true 
+                        }
                         console.log(file)
                     }
                 );
@@ -171,34 +251,73 @@
 
     },
     methods: {
+        onUpdate: function(payload) {
+            this.phoneDetails = payload;
+            if(this.phoneDetails.isValid){
+                this.isPhoneNoValid = true
+            }
+        },
         validate () {
             if(this.$refs.dropzoneQuoteOptions.dropzone.files.length == 0){
                 this.isDrawingFileNotUploaded = true
             }
+            if(this.phone){
+                if(!this.phoneDetails.isValid){
+                    this.isPhoneNoValid = false
+                }
+            }
+
             this.$refs.form.validate()
-            if(this.$refs.form.validate() && !this.isDrawingFileNotUploaded){
+            if(this.$refs.form.validate() && !this.isDrawingFileNotUploaded &&  this.isPhoneNoValid){
                 this.dialog = true 
             }
         },
         reset () {
+            this.isLoading = false
+            this.isSuccess = false
             this.isDrawingFileNotUploaded = false
+            this.phone = ''
+            this.phoneDetails = {}
+            if(this.recapchaToken){
+                this.$refs.recaptcha.reset()
+            }
             this.$refs.dropzoneQuoteOptions.removeAllFiles()
             this.$refs.dropzoneRFQOptions.removeAllFiles()
             this.$refs.form.reset()
         },
         quoteFileUploadSuccess(file, response){
-            console.log(file, response)
+            this.quoteFileCount += 1
         },
         requirementRFQSuccess(file, response){
-            console.log(file, response)
+            this.rfqFileCount += 1
         },
-        verifyCallback(response){
+        async verifyCallback(response){
             if(response) {
+                const personalData = {
+                    company: this.company, 
+                    name: this.name, 
+                    email: this.email, 
+                    phone: '('+this.phoneDetails.countryCallingCode+')'+this.phone,
+                    token: response
+                }
+
+                const rawResponse = await fetch('http://localhost:4000/personal-info', {
+                    method: 'POST',
+                    headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(personalData)
+                });
+
+                const personalInfoResponse = await rawResponse.json();
+                this.personalInfoID = personalInfoResponse.id
+
                 this.recapchaToken = response
                 this.dialog = false
+                this.isLoading = true
                 this.$refs.dropzoneQuoteOptions.processQueue()
                 this.$refs.dropzoneRFQOptions.processQueue()
-                console.log('Form submitted')
             }
         }
     },
@@ -212,7 +331,8 @@
         margin-bottom: 30px;
     }
     .dropzone{
-        min-height: 200px;
+        height: 500px;
+        overflow-y: scroll;
     }
     .recaptcha_style, #recatcha_alert_msg{
         width: 304px;

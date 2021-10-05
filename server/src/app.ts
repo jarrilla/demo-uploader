@@ -3,6 +3,7 @@ import Busboy from 'busboy'
 import fs from 'fs';
 import path from 'path';
 import cors from 'cors';
+import { v4 as uuidv4 } from 'uuid';
 
 const app = express();
 app.use( express.json() );
@@ -32,9 +33,10 @@ const ALLOWED_FILE_TYPES = [
 const CHECK_EXT_AGAINST_ALLOWED = (ext: String) =>
   ALLOWED_FILE_TYPES.includes( ext.toUpperCase() );
 
-app.post('/upload', (req, res) => {
+app.post('/upload/:personalInfoID', (req, res) => {
 
   try {
+    const personalInfoID = req.params.personalInfoID
     const writtenFiles: string[] = [];
     const ignoredFiles: string[] = [];
 
@@ -70,6 +72,7 @@ app.post('/upload', (req, res) => {
         req.unpipe();
   
         res.writeHead(400, { Connection: 'close' });
+
         res.end( JSON.stringify({
           success: false,
           error: `File ${fieldName} is too large!`,
@@ -81,9 +84,14 @@ app.post('/upload', (req, res) => {
         // fieldNames.forEach(s => fs.unlinkSync( path.join(__dirname, s) ));
       });
   
+      let uniqueFileName = uuidv4()
+
       // pipe to filesystem
-      const saveTo = path.join( __dirname, 'uploads', fieldName+'.'+ext );
+      const saveTo = path.join( __dirname, '..', 'uploads', uniqueFileName+'.'+ext );
       file.pipe( fs.createWriteStream(saveTo) );
+
+      // Please write update query for file uploads saveTo is file url
+
     });
   
     // done uploading. send 200
@@ -103,6 +111,18 @@ app.post('/upload', (req, res) => {
   catch (e) {
     console.error(e);
     res.sendStatus(500);
+  }
+});
+
+app.post('/personal-info', (req, res) => {
+  try {
+    let personInfo = req.body
+    personInfo.id = Date.now()
+    //Write person info create code in database
+
+    return res.status(200).json(personInfo)
+  }catch(e){
+
   }
 });
 
