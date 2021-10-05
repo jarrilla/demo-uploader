@@ -38,8 +38,8 @@ const CHECK_EXT_AGAINST_ALLOWED = (ext: String) =>
 app.post('/upload/:personalInfoID/:fileType', (req, res) => {
 
   try {
-    const personalInfoID = req.params.personalInfoID
-    const fileType = req.params.fileType
+    const personalInfoID:string = req.params.personalInfoID
+    const fileType:string = req.params.fileType
     const writtenFiles: string[] = [];
     const ignoredFiles: string[] = [];
 
@@ -59,7 +59,7 @@ app.post('/upload/:personalInfoID/:fileType', (req, res) => {
     ) => {
       
       // check file types first
-      const ext = fileName.split('.')[ fileName.split('.').length - 1 ];
+      const ext:string = fileName.split('.')[ fileName.split('.').length - 1 ];
       if ( CHECK_EXT_AGAINST_ALLOWED(ext) !== true ) {
         ignoredFiles.push(fieldName);
         return file.resume();
@@ -93,14 +93,17 @@ app.post('/upload/:personalInfoID/:fileType', (req, res) => {
       const saveTo = path.join( __dirname, '..', 'uploads', uniqueFileName+'.'+ext );
       file.pipe( fs.createWriteStream(saveTo) );
 
-      // Please write update query for file uploads saveTo is file url
-
     });
   
     // done uploading. send 200
     busboy.on('finish', function() {
-
-      const statusCode = ignoredFiles.length ? 413 : 200;
+      const statusCode:number = ignoredFiles.length ? 413 : 200;
+      
+      //write personal info update with uploaded file url code here
+      if(statusCode === 200){
+        
+      }
+      // ==============================================================
 
       res.writeHead( statusCode, { Connection: 'close' } );
       res.end( JSON.stringify({
@@ -130,8 +133,7 @@ app.post('/personal-info', async (req, res) => {
   
     // Hitting POST request to the URL, Google will
     // respond with success or error scenario.
-    const url:string =
-  `https://www.google.com/recaptcha/api/siteverify?secret=${secret_key}&response=${response_key}`;
+    const url:string =`${CONSTANTS.CAPTCHA_TOKEN_VERIFY_URL}?secret=${secret_key}&response=${response_key}`;
   
     axios({
       method: 'post',
@@ -139,6 +141,9 @@ app.post('/personal-info', async (req, res) => {
       data: {}
     }).then((response:any) => {
       if(response.data.success){
+        //write personal information insert code for database here
+
+        // ==========================================================
         return res.status(200).json({
           success: true,
           data: personInfo
@@ -150,31 +155,6 @@ app.post('/personal-info', async (req, res) => {
         })
       }
     })
-    
-
-    // // Making POST request to verify captcha
-    // fetch(url, {
-    //   method: "post",
-    // })
-      // .then((response:any) => response.json())
-      // .then((google_response:any) => {
-      //   // google_response is the object return by
-      //   // google as a response
-      //   if (google_response.success == true) {
-      //     //   if captcha is verified
-      //     console.log('successful')
-      //     return res.send({ response: "Successful" });
-      //   } else {
-      //     // if captcha is not verified
-      //     console.log('faild')
-      //     return res.send({ response: "Failed" });
-      //   }
-      // })
-    //   .catch((error) => {
-    //       // Some error while verify captcha
-    //     return res.json({ error });
-    //   });
-
   }catch(e){
 
   }

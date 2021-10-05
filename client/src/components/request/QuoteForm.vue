@@ -36,6 +36,7 @@
         </v-dialog>
         <v-dialog
         v-model="isSuccess"
+        persistent
         max-width="290"
         >
         <v-card>
