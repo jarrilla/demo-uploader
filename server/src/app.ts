@@ -4,6 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
+import CONSTANTS from './constants';
 
 const app = express();
 app.use( express.json() );
@@ -33,10 +35,11 @@ const ALLOWED_FILE_TYPES = [
 const CHECK_EXT_AGAINST_ALLOWED = (ext: String) =>
   ALLOWED_FILE_TYPES.includes( ext.toUpperCase() );
 
-app.post('/upload/:personalInfoID', (req, res) => {
+app.post('/upload/:personalInfoID/:fileType', (req, res) => {
 
   try {
     const personalInfoID = req.params.personalInfoID
+    const fileType = req.params.fileType
     const writtenFiles: string[] = [];
     const ignoredFiles: string[] = [];
 
@@ -84,7 +87,7 @@ app.post('/upload/:personalInfoID', (req, res) => {
         // fieldNames.forEach(s => fs.unlinkSync( path.join(__dirname, s) ));
       });
   
-      let uniqueFileName = uuidv4()
+      let uniqueFileName = fileType + '-'  + personalInfoID + '-' + uuidv4()
 
       // pipe to filesystem
       const saveTo = path.join( __dirname, '..', 'uploads', uniqueFileName+'.'+ext );
@@ -114,13 +117,64 @@ app.post('/upload/:personalInfoID', (req, res) => {
   }
 });
 
-app.post('/personal-info', (req, res) => {
+app.post('/personal-info', async (req, res) => {
   try {
-    let personInfo = req.body
+    let personInfo:any = req.body
     personInfo.id = Date.now()
     //Write person info create code in database
 
-    return res.status(200).json(personInfo)
+    // getting site key from client side
+    const response_key:string = personInfo.token;
+    // Put secret key here, which we get from google console
+    const secret_key:string = CONSTANTS.GOOGOLE_CAPTCHA_SECRECT_KEY;
+  
+    // Hitting POST request to the URL, Google will
+    // respond with success or error scenario.
+    const url:string =
+  `https://www.google.com/recaptcha/api/siteverify?secret=${secret_key}&response=${response_key}`;
+  
+    axios({
+      method: 'post',
+      url: url,
+      data: {}
+    }).then((response:any) => {
+      if(response.data.success){
+        return res.status(200).json({
+          success: true,
+          data: personInfo
+        })
+      }else{
+        return res.status(400).json({
+          success: false,
+          message: 'invalid google captcha validation'
+        })
+      }
+    })
+    
+
+    // // Making POST request to verify captcha
+    // fetch(url, {
+    //   method: "post",
+    // })
+      // .then((response:any) => response.json())
+      // .then((google_response:any) => {
+      //   // google_response is the object return by
+      //   // google as a response
+      //   if (google_response.success == true) {
+      //     //   if captcha is verified
+      //     console.log('successful')
+      //     return res.send({ response: "Successful" });
+      //   } else {
+      //     // if captcha is not verified
+      //     console.log('faild')
+      //     return res.send({ response: "Failed" });
+      //   }
+      // })
+    //   .catch((error) => {
+    //       // Some error while verify captcha
+    //     return res.json({ error });
+    //   });
+
   }catch(e){
 
   }

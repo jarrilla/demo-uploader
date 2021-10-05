@@ -9,7 +9,7 @@
                 <v-card-title class="text-h6">
                 Recaptcha
                 </v-card-title>
-                <vue-recaptcha class="recaptcha_style" ref="recaptcha" @verify="verifyCallback" sitekey="6LcLc5kcAAAAAC9YNLY8IEMz3Q44GewMMHoNSiwS" :loadRecaptchaScript="true"></vue-recaptcha>
+                <vue-recaptcha class="recaptcha_style" ref="recaptcha" @verify="verifyCallback" :sitekey="sitekey" :loadRecaptchaScript="true"></vue-recaptcha>
                 <v-card-actions>
                     <v-spacer></v-spacer>
                 </v-card-actions>    
@@ -147,6 +147,7 @@
 
 <script>
   let self;
+  import CONSTANT from '../../../constant'
   import VuePhoneNumberInput from 'vue-phone-number-input';
   import '../../../custom/css/vue-phone-number-input.css';
   import vue2Dropzone from 'vue2-dropzone'
@@ -164,6 +165,7 @@
         self = this;
     },
     data: () => ({
+        sitekey: CONSTANT.GOOGLE_CAPTCHA_SITE_KEY,
         dialog: false,
         valid: true,
         isLoading: false,
@@ -200,7 +202,7 @@
             dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> Upload drawings or part files that you want quoted. <br/><strong>Allowed file-types:</strong> STEP, STP, SLDPRT, STL, DXF, IPT, X_T, X_B, 3MF, 3DXML, CATPART, PRT, SAT, PDF",
             init: function() {
                 this.on("processing", function (file) {
-                    self.$refs.dropzoneQuoteOptions.setOption('url', `http://localhost:4000/upload/${self.personalInfoID}`);
+                    self.$refs.dropzoneQuoteOptions.setOption('url', `${CONSTANT.API_URL}/upload/${self.personalInfoID}/part-file`);
                 });
                 this.on("addedfile", 
                     function(file) { 
@@ -233,7 +235,7 @@
             dictDefaultMessage: "<i class='fa fa-cloud-upload'></i> If you have an RFQ file or any project specifications, upload them here. <br/><strong>Allowed file-types:</strong> PDF, DOCX, DOC, XLSX, XLS, CSV",
             init: function() { 
                 this.on("processing", function (file) {     
-                    self.$refs.dropzoneRFQOptions.setOption('url', `http://localhost:4000/upload/${self.personalInfoID}`);
+                    self.$refs.dropzoneRFQOptions.setOption('url', `${CONSTANT.API_URL}/upload/${self.personalInfoID}/project-specification`);
                 });
                 this.on("complete", 
                     function(file) { 
@@ -294,14 +296,14 @@
         async verifyCallback(response){
             if(response) {
                 const personalData = {
-                    company: this.company, 
-                    name: this.name, 
-                    email: this.email, 
+                    company: this.company.toLowerCase(), 
+                    name: this.name.toLowerCase(), 
+                    email: this.email.toLowerCase(), 
                     phone: '('+this.phoneDetails.countryCallingCode+')'+this.phone,
                     token: response
                 }
 
-                const rawResponse = await fetch('http://localhost:4000/personal-info', {
+                const rawResponse = await fetch(`${CONSTANT.API_URL}/personal-info`, {
                     method: 'POST',
                     headers: {
                     'Accept': 'application/json',
@@ -311,13 +313,16 @@
                 });
 
                 const personalInfoResponse = await rawResponse.json();
-                this.personalInfoID = personalInfoResponse.id
-
-                this.recapchaToken = response
-                this.dialog = false
-                this.isLoading = true
-                this.$refs.dropzoneQuoteOptions.processQueue()
-                this.$refs.dropzoneRFQOptions.processQueue()
+                if(personalInfoResponse.success){
+                    this.personalInfoID = personalInfoResponse.data.id
+                    this.recapchaToken = response
+                    this.dialog = false
+                    this.isLoading = true
+                    this.$refs.dropzoneQuoteOptions.processQueue()
+                    this.$refs.dropzoneRFQOptions.processQueue()
+                }else{
+                    this.reset()
+                }
             }
         }
     },

@@ -1,0 +1,7 @@
+const API_URL = "http://localhost:4000" 
+const GOOGLE_CAPTCHA_SITE_KEY = "6LcLc5kcAAAAAC9YNLY8IEMz3Q44GewMMHoNSiwS" 
+
+export default {
+    API_URL: API_URL,
+    GOOGLE_CAPTCHA_SITE_KEY: GOOGLE_CAPTCHA_SITE_KEY
+}
