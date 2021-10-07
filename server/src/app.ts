@@ -35,6 +35,174 @@ const ALLOWED_FILE_TYPES = [
 const CHECK_EXT_AGAINST_ALLOWED = (ext: String) =>
   ALLOWED_FILE_TYPES.includes( ext.toUpperCase() );
 
+app.post('/upload/part-file/:personalInfoID', (req, res) => {
+
+  try {
+    const personalInfoID:string = req.params.personalInfoID
+    const writtenFiles: string[] = [];
+    const ignoredFiles: string[] = [];
+
+    const busboy = new Busboy({
+      headers: req.headers,
+      limits: {
+        fileSize: 100*1000000
+      }
+    });
+  
+    busboy.on('file', (
+      fieldName: string,
+      file: NodeJS.ReadableStream,
+      fileName,
+      // encoding,
+      // mimeType
+    ) => {
+      
+      // check file types first
+      const ext:string = fileName.split('.')[ fileName.split('.').length - 1 ];
+      if ( CHECK_EXT_AGAINST_ALLOWED(ext) !== true ) {
+        ignoredFiles.push(fieldName);
+        return file.resume();
+      }
+
+
+      writtenFiles.push(fieldName);
+  
+      // on file limit just crap out error & unlink file
+      file.on('limit', function() {
+  
+        file.unpipe();
+        req.unpipe();
+  
+        res.writeHead(400, { Connection: 'close' });
+
+        res.end( JSON.stringify({
+          success: false,
+          error: `File ${fieldName} is too large!`,
+        }) );
+  
+        // NOTE(jarrilla):
+        // not trying to delete files from fs since this seems to brick the next attempt
+        // when OS is trying to write to a file that got unlinked before OS deletes it, app hangs
+        // fieldNames.forEach(s => fs.unlinkSync( path.join(__dirname, s) ));
+      });
+  
+      let uniqueFileName =  'part-'  + personalInfoID + '-' + uuidv4()
+
+      // pipe to filesystem
+      const saveTo = path.join( __dirname, '..', 'uploads', uniqueFileName+'.'+ext );
+      file.pipe( fs.createWriteStream(saveTo) );
+
+    });
+  
+    // done uploading. send 200
+    busboy.on('finish', function() {
+      const statusCode:number = ignoredFiles.length ? 413 : 200;
+      
+      //write personal info update with uploaded file url code here
+      if(statusCode === 200){
+        
+      }
+      // ==============================================================
+
+      res.writeHead( statusCode, { Connection: 'close' } );
+      res.end( JSON.stringify({
+        success: !ignoredFiles.length,
+        ignoredFiles
+      }));
+    });
+  
+    return req.pipe(busboy);
+  }
+  catch (e) {
+    console.error(e);
+    res.sendStatus(500);
+  }
+});
+
+app.post('/upload/rfq-file/:personalInfoID', (req, res) => {
+
+  try {
+    const personalInfoID:string = req.params.personalInfoID
+    const writtenFiles: string[] = [];
+    const ignoredFiles: string[] = [];
+
+    const busboy = new Busboy({
+      headers: req.headers,
+      limits: {
+        fileSize: 100*1000000
+      }
+    });
+  
+    busboy.on('file', (
+      fieldName: string,
+      file: NodeJS.ReadableStream,
+      fileName,
+      // encoding,
+      // mimeType
+    ) => {
+      
+      // check file types first
+      const ext:string = fileName.split('.')[ fileName.split('.').length - 1 ];
+      if ( CHECK_EXT_AGAINST_ALLOWED(ext) !== true ) {
+        ignoredFiles.push(fieldName);
+        return file.resume();
+      }
+
+
+      writtenFiles.push(fieldName);
+  
+      // on file limit just crap out error & unlink file
+      file.on('limit', function() {
+  
+        file.unpipe();
+        req.unpipe();
+  
+        res.writeHead(400, { Connection: 'close' });
+
+        res.end( JSON.stringify({
+          success: false,
+          error: `File ${fieldName} is too large!`,
+        }) );
+  
+        // NOTE(jarrilla):
+        // not trying to delete files from fs since this seems to brick the next attempt
+        // when OS is trying to write to a file that got unlinked before OS deletes it, app hangs
+        // fieldNames.forEach(s => fs.unlinkSync( path.join(__dirname, s) ));
+      });
+  
+      let uniqueFileName =  'rfq-'  + personalInfoID + '-' + uuidv4()
+
+      // pipe to filesystem
+      const saveTo = path.join( __dirname, '..', 'uploads', uniqueFileName+'.'+ext );
+      file.pipe( fs.createWriteStream(saveTo) );
+
+    });
+  
+    // done uploading. send 200
+    busboy.on('finish', function() {
+      const statusCode:number = ignoredFiles.length ? 413 : 200;
+      
+      //write personal info update with uploaded file url code here
+      if(statusCode === 200){
+        
+      }
+      // ==============================================================
+
+      res.writeHead( statusCode, { Connection: 'close' } );
+      res.end( JSON.stringify({
+        success: !ignoredFiles.length,
+        ignoredFiles
+      }));
+    });
+  
+    return req.pipe(busboy);
+  }
+  catch (e) {
+    console.error(e);
+    res.sendStatus(500);
+  }
+});  
+
 app.post('/upload/:personalInfoID/:fileType', (req, res) => {
 
   try {
