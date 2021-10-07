@@ -56,7 +56,20 @@ app.post('/upload/part-file/:personalInfoID', (req, res) => {
       // encoding,
       // mimeType
     ) => {
-      
+
+      // SIMULATE ERROR 
+      // comment out to resume normal testing behavior
+      {
+        req.unpipe();
+        res.writeHead(400, { Connection: 'close' });
+        
+        return res.end( JSON.stringify({
+          success: false,
+          error: 'whatever'
+        }) );
+      }
+
+
       // check file types first
       const ext:string = fileName.split('.')[ fileName.split('.').length - 1 ];
       if ( CHECK_EXT_AGAINST_ALLOWED(ext) !== true ) {
@@ -114,8 +127,14 @@ app.post('/upload/part-file/:personalInfoID', (req, res) => {
     return req.pipe(busboy);
   }
   catch (e) {
+    req.unpipe();
+
     console.error(e);
-    res.sendStatus(500);
+    res.writeHead(500, { Connection: 'close' });
+    res.end( JSON.stringify({
+      success: false,
+      error: `Unknown error`,
+    }) );
   }
 });
 
