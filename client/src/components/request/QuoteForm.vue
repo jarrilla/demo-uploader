@@ -45,6 +45,21 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-dialog v-model="isError.status" persistent max-width="290">
+        <v-card>
+          <v-card-text class="pt-15 text-center">
+            <p v-for="(errorMessage, index) in isError.errors" :key="index"><strong>{{errorMessage}}</strong></p>
+          </v-card-text>
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+
+            <v-btn color="green darken-1" text @click="removeErrorResponse">
+              Okay
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-row>
     <v-row class="text-center">
       <v-col cols="8" class="offset-2">
@@ -166,6 +181,10 @@ export default {
     sitekey: CONSTANT.GOOGLE_CAPTCHA_SITE_KEY,
     dialog: false,
     valid: true,
+    isError: {
+      status: false,
+      errors: []
+    },
     isLoading: false,
     isSuccess: false,
     company: "",
@@ -205,6 +224,13 @@ export default {
         this.on("addedfile", function(file) {
           self.isDrawingFileNotUploaded = false;
         });
+        this.on("error", function(file) {
+          self.isError = {
+            status: true,
+            errors: ['Invalid file type and size more than 100MB of PART file not allowed to upload']
+          }
+          self.$refs.dropzoneQuoteOptions.removeFile(file)
+        });
         this.on("complete", function(file) {
           if (
             self.quoteFileCount ===
@@ -237,6 +263,13 @@ export default {
             "url",
             `${CONSTANT.API_URL}/upload/rfq-file/${self.personalInfoID}`
           );
+        });
+        this.on("error", function(file) {
+          self.isError = {
+            status: true,
+            errors: ['Invalid file type and size more than 100MB of RFQ file not allowed to upload']
+          }
+          self.$refs.dropzoneRFQOptions.removeFile(file)
         });
         this.on("complete", function(file) {
           if (
@@ -280,11 +313,18 @@ export default {
         this.dialog = true;
       }
     },
+    removeErrorResponse(){
+      this.isError = {
+        status: false,
+        errors: []
+      }
+    },
     reset() {
       this.quoteFileCount = 0;
       this.rfqFileCount = 0;
       this.isLoading = false;
       this.isSuccess = false;
+      // this.removeErrorResponse()
       this.isDrawingFileNotUploaded = false;
       this.phone = "";
       this.phoneDetails = {};
@@ -311,25 +351,44 @@ export default {
           token: response,
         };
 
-        const rawResponse = await fetch(`${CONSTANT.API_URL}/personal-info`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(personalData),
-        });
+        try {
+            const rawResponse = await fetch(`${CONSTANT.API_URL}/personal-info`, {
+              method: "POST",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(personalData),
+            });
 
-        const personalInfoResponse = await rawResponse.json();
-        if (personalInfoResponse.success) {
-          this.personalInfoID = personalInfoResponse.data.id;
-          this.recapchaToken = response;
-          this.dialog = false;
-          this.isLoading = true;
-          this.$refs.dropzoneQuoteOptions.processQueue();
-          this.$refs.dropzoneRFQOptions.processQueue();
-        } else {
-          this.reset();
+            if(!rawResponse.ok){
+                this.dialog = false;
+                if(rawResponse.status===400){
+                  this.isError = {
+                      status: true,
+                      errors: ['data validation error']
+                  }
+                }else{
+                  this.isError = {
+                    status: true,
+                    errors: ['server response error']
+                  }
+                }
+            }
+
+            const personalInfoResponse = await rawResponse.json();
+            if (personalInfoResponse.success) {
+              this.personalInfoID = personalInfoResponse.data.id;
+              this.recapchaToken = response;
+              this.dialog = false;
+              this.isLoading = true;
+              this.$refs.dropzoneQuoteOptions.processQueue();
+              this.$refs.dropzoneRFQOptions.processQueue();
+            } else {
+              this.reset();
+            }
+        } catch (error) {
+          console.log(error)
         }
       }
     },

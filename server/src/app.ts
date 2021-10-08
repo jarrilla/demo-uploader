@@ -59,15 +59,15 @@ app.post('/upload/part-file/:personalInfoID', (req, res) => {
 
       // SIMULATE ERROR 
       // comment out to resume normal testing behavior
-      {
-        req.unpipe();
-        res.writeHead(400, { Connection: 'close' });
+      // {
+      //   req.unpipe();
+      //   res.writeHead(400, { Connection: 'close' });
         
-        return res.end( JSON.stringify({
-          success: false,
-          error: 'whatever'
-        }) );
-      }
+      //   return res.end( JSON.stringify({
+      //     success: false,
+      //     error: 'whatever'
+      //   }) );
+      // }
 
 
       // check file types first
@@ -222,7 +222,7 @@ app.post('/upload/rfq-file/:personalInfoID', (req, res) => {
   }
 });  
 
-app.post('/upload/:personalInfoID/:fileType', (req, res) => {
+app.post('/upload/common-file/:personalInfoID/:fileType', (req, res) => {
 
   try {
     const personalInfoID:string = req.params.personalInfoID
