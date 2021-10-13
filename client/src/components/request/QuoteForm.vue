@@ -18,10 +18,23 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+        <v-dialog v-model='isVerifying' persistent width='300'>
+            <v-card color="success" dark>
+                <v-card-text>
+                Verifying ...
+                <v-progress-linear
+                    indeterminate
+                    color="white"
+                    class="mb-0"
+                ></v-progress-linear>
+                </v-card-text>
+            </v-card>
+        </v-dialog>
+
       <v-dialog v-model="isLoading" persistent width="300">
         <v-card color="primary" dark>
           <v-card-text>
-            Loading ...
+            Uploading Files ...
             <v-progress-linear
               indeterminate
               color="white"
@@ -185,6 +198,7 @@ export default {
       status: false,
       errors: []
     },
+    isVerifying: false,
     isLoading: false,
     isSuccess: false,
     company: "",
@@ -231,7 +245,7 @@ export default {
           }
           self.$refs.dropzoneQuoteOptions.removeFile(file)
         });
-        this.on("complete", function(file) {
+        this.on("complete", function() {
           if (
             self.quoteFileCount ===
               self.$refs.dropzoneQuoteOptions.dropzone.files.length &&
@@ -322,6 +336,7 @@ export default {
     reset() {
       this.quoteFileCount = 0;
       this.rfqFileCount = 0;
+      this.isVerifying = false;
       this.isLoading = false;
       this.isSuccess = false;
       // this.removeErrorResponse()
@@ -352,7 +367,7 @@ export default {
         };
 
         try {
-            this.isLoading = true;
+            this.isVerifying = true;
 
             const rawResponse = await fetch(`${CONSTANT.API_URL}/rfq`, {
               method: "PUT",
@@ -380,6 +395,9 @@ export default {
 
             const rfqResponse = await rawResponse.json();
             if (rfqResponse.folderId) {
+                this.isVerifying = false;
+                this.isLoading = true;
+
                 this.RFQFolderId = rfqResponse.folderId;
                 this.recapchaToken = response;
                 this.dialog = false;
