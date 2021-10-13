@@ -188,7 +188,7 @@ export default {
     isLoading: false,
     isSuccess: false,
     company: "",
-    personalInfoID: "",
+    RFQFolderId: '',
     companyRules: [(v) => !!v || "Company is required"],
     name: "",
     nameRules: [(v) => !!v || "Name is required"],
@@ -218,7 +218,7 @@ export default {
         this.on("processing", function(file) {
           self.$refs.dropzoneQuoteOptions.setOption(
             "url",
-            `${CONSTANT.API_URL}/upload/part-file/${self.personalInfoID}`
+            `${CONSTANT.API_URL}/rfq/${self.RFQFolderId}/part`
           );
         });
         this.on("addedfile", function(file) {
@@ -261,7 +261,7 @@ export default {
         this.on("processing", function(file) {
           self.$refs.dropzoneRFQOptions.setOption(
             "url",
-            `${CONSTANT.API_URL}/upload/rfq-file/${self.personalInfoID}`
+            `${CONSTANT.API_URL}/rfq/${self.RFQFolderId}/spec`
           );
         });
         this.on("error", function(file) {
@@ -344,16 +344,18 @@ export default {
     async verifyCallback(response) {
       if (response) {
         const personalData = {
-          company: this.company.toLowerCase(),
-          name: this.name.toLowerCase(),
-          email: this.email.toLowerCase(),
-          phone: "(" + this.phoneDetails.countryCallingCode + ")" + this.phone,
+          company: this.company,
+          name: this.name,
+          email: this.email,
+          phone: this.phone,
           token: response,
         };
 
         try {
-            const rawResponse = await fetch(`${CONSTANT.API_URL}/personal-info`, {
-              method: "POST",
+            this.isLoading = true;
+
+            const rawResponse = await fetch(`${CONSTANT.API_URL}/rfq`, {
+              method: "PUT",
               headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json",
@@ -376,15 +378,16 @@ export default {
                 }
             }
 
-            const personalInfoResponse = await rawResponse.json();
-            if (personalInfoResponse.success) {
-              this.personalInfoID = personalInfoResponse.data.id;
-              this.recapchaToken = response;
-              this.dialog = false;
-              this.isLoading = true;
-              this.$refs.dropzoneQuoteOptions.processQueue();
-              this.$refs.dropzoneRFQOptions.processQueue();
-            } else {
+            const rfqResponse = await rawResponse.json();
+            if (rfqResponse.folderId) {
+                this.RFQFolderId = rfqResponse.folderId;
+                this.recapchaToken = response;
+                this.dialog = false;
+                
+                this.$refs.dropzoneQuoteOptions.processQueue();
+                this.$refs.dropzoneRFQOptions.processQueue();
+            }
+            else {
               this.reset();
             }
         } catch (error) {
