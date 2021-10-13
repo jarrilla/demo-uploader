@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:4000" 
+const API_URL = "http://localhost:8000" 
 const GOOGLE_CAPTCHA_SITE_KEY = "6LcLc5kcAAAAAC9YNLY8IEMz3Q44GewMMHoNSiwS" 
 
 export default {
