@@ -18,10 +18,10 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-        <v-dialog v-model='isVerifying' persistent width='300'>
+        <v-dialog v-model='isCreatingRFQ' persistent width='250'>
             <v-card color="success" dark>
                 <v-card-text>
-                Verifying ...
+                Creating RFQ ...
                 <v-progress-linear
                     indeterminate
                     color="white"
@@ -31,7 +31,7 @@
             </v-card>
         </v-dialog>
 
-      <v-dialog v-model="isLoading" persistent width="300">
+      <v-dialog v-model="isLoading" persistent width="250">
         <v-card color="primary" dark>
           <v-card-text>
             Uploading Files ...
@@ -43,10 +43,11 @@
           </v-card-text>
         </v-card>
       </v-dialog>
-      <v-dialog v-model="isSuccess" persistent max-width="290">
+      <v-dialog v-model="isSuccess" persistent max-width="300">
         <v-card>
           <v-card-text class="pt-15 text-center">
-            <strong>RFQ Submitted</strong>
+            <strong>Thank you for your request!</strong>
+            <p>You should receive a follow-up email soon.</p>
           </v-card-text>
 
           <v-card-actions>
@@ -135,7 +136,7 @@
                 class="mt-2"
                 v-if="isDrawingFileNotUploaded"
               >
-                upload drawings or art files that you want to quoted is required
+                At least one drawing or part file is required to submit a request
               </v-alert>
             </v-col>
             <v-col cols="12" class="col-lg-6 col-sm-12">
@@ -198,11 +199,13 @@ export default {
       status: false,
       errors: []
     },
-    isVerifying: false,
+    isCreatingRFQ: false,
     isLoading: false,
     isSuccess: false,
     company: "",
     RFQFolderId: '',
+    PartsFolderId: '',
+    SpecsFolderId: '',
     companyRules: [(v) => !!v || "Company is required"],
     name: "",
     nameRules: [(v) => !!v || "Name is required"],
@@ -218,6 +221,7 @@ export default {
     recapchaToken: null,
     dropzoneQouteFiles: [],
     dropzoneQuoteOptions: {
+        method: 'PUT',
       url: "url",
       thumbnailWidth: 75,
       maxFilesize: 100,
@@ -232,18 +236,24 @@ export default {
         this.on("processing", function(file) {
           self.$refs.dropzoneQuoteOptions.setOption(
             "url",
-            `${CONSTANT.API_URL}/rfq/${self.RFQFolderId}/part`
+            `${CONSTANT.API_URL}/file/${self.PartsFolderId}`
           );
         });
-        this.on("addedfile", function(file) {
+        this.on("addedfile", function(_file) {
           self.isDrawingFileNotUploaded = false;
         });
-        this.on("error", function(file) {
+        this.on("error", function(file, msg, xmr) {
+
           self.isError = {
             status: true,
-            errors: ['Invalid file type and size more than 100MB of PART file not allowed to upload']
+            errors: [msg]
           }
-          self.$refs.dropzoneQuoteOptions.removeFile(file)
+
+          // error didn't come from server.. so it's an invalid file
+          // just remove it
+          if (xmr === undefined) {
+            self.$refs.dropzoneQuoteOptions.removeFile(file)
+          }
         });
         this.on("complete", function() {
           if (
@@ -263,6 +273,7 @@ export default {
     rfqFileCount: 0,
     dropzoneRFQOptions: {
       url: "url",
+      method: 'put',
       thumbnailWidth: 75,
       maxFilesize: 100,
       autoProcessQueue: false,
@@ -275,15 +286,20 @@ export default {
         this.on("processing", function(file) {
           self.$refs.dropzoneRFQOptions.setOption(
             "url",
-            `${CONSTANT.API_URL}/rfq/${self.RFQFolderId}/spec`
+            `${CONSTANT.API_URL}/file/${self.SpecsFolderId}`,
+
           );
         });
-        this.on("error", function(file) {
+        this.on("error", function(file, msg, xmr) {
+
           self.isError = {
             status: true,
-            errors: ['Invalid file type and size more than 100MB of RFQ file not allowed to upload']
+            errors: [msg + '\nPlease try again!']
           }
-          self.$refs.dropzoneRFQOptions.removeFile(file)
+
+          if (xmr === undefined) {
+            self.$refs.dropzoneRFQOptions.removeFile(file)
+          }
         });
         this.on("complete", function(file) {
           if (
@@ -336,7 +352,7 @@ export default {
     reset() {
       this.quoteFileCount = 0;
       this.rfqFileCount = 0;
-      this.isVerifying = false;
+      this.isCreatingRFQ = false;
       this.isLoading = false;
       this.isSuccess = false;
       // this.removeErrorResponse()
@@ -367,7 +383,7 @@ export default {
         };
 
         try {
-            this.isVerifying = true;
+            this.isCreatingRFQ = true;
 
             const rawResponse = await fetch(`${CONSTANT.API_URL}/rfq`, {
               method: "PUT",
@@ -380,25 +396,29 @@ export default {
 
             if(!rawResponse.ok){
                 this.dialog = false;
-                if(rawResponse.status===400){
+                if( rawResponse.status === 400 ){
                   this.isError = {
                       status: true,
-                      errors: ['data validation error']
+                      errors: ['Data validation error.']
                   }
                 }else{
                   this.isError = {
                     status: true,
-                    errors: ['server response error']
+                    errors: ['Server response error.']
                   }
                 }
             }
 
             const rfqResponse = await rawResponse.json();
-            if (rfqResponse.folderId) {
-                this.isVerifying = false;
+            console.log(rfqResponse);
+            if (rfqResponse.rfqFolderId) {
+                this.isCreatingRFQ = false;
                 this.isLoading = true;
 
-                this.RFQFolderId = rfqResponse.folderId;
+                this.RFQFolderId = rfqResponse.rfqFolderId;
+                this.PartsFolderId = rfqResponse.partsFolderId;
+                this.SpecsFolderId = rfqResponse.specsFolderId;
+
                 this.recapchaToken = response;
                 this.dialog = false;
                 
@@ -406,6 +426,8 @@ export default {
                 this.$refs.dropzoneRFQOptions.processQueue();
             }
             else {
+                // TODO: error
+
               this.reset();
             }
         } catch (error) {
