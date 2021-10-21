@@ -3,6 +3,7 @@ import Busboy from 'busboy'
 import fs from 'fs';
 import path from 'path';
 import cors from 'cors';
+import { PassThrough } from 'stream';
 
 const app = express();
 app.use( express.json() );
@@ -32,7 +33,9 @@ const ALLOWED_FILE_TYPES = [
 const CHECK_EXT_AGAINST_ALLOWED = (ext: String) =>
   ALLOWED_FILE_TYPES.includes( ext.toUpperCase() );
 
-app.post('/upload', (req, res) => {
+app.put('/upload', (req, res) => {
+
+  console.debug(req.headers);
 
   try {
     const writtenFiles: string[] = [];
@@ -45,45 +48,66 @@ app.post('/upload', (req, res) => {
       }
     });
   
-    busboy.on('file', (
+    busboy.on('file', function(
       fieldName: string,
       file: NodeJS.ReadableStream,
       fileName,
-      // encoding,
+      encoding,
       // mimeType
-    ) => {
-      
-      // check file types first
-      const ext = fileName.split('.')[ fileName.split('.').length - 1 ];
-      if ( CHECK_EXT_AGAINST_ALLOWED(ext) !== true ) {
-        ignoredFiles.push(fieldName);
-        return file.resume();
-      }
+    ) {
+
+      console.debug({ encoding });
+
+      // // check file types first
+      // const ext = fileName.split('.')[ fileName.split('.').length - 1 ];
+      // if ( CHECK_EXT_AGAINST_ALLOWED(ext) !== true ) {
+      //   ignoredFiles.push(fieldName);
+      //   return file.resume();
+      // }
 
 
-      writtenFiles.push(fieldName);
+      // writtenFiles.push(fieldName);
   
-      // on file limit just crap out error & unlink file
-      file.on('limit', function() {
+      // // on file limit just crap out error & unlink file
+      // file.on('limit', function() {
   
-        file.unpipe();
-        req.unpipe();
+      //   file.unpipe();
+      //   req.unpipe();
   
-        res.writeHead(400, { Connection: 'close' });
-        res.end( JSON.stringify({
-          success: false,
-          error: `File ${fieldName} is too large!`,
-        }) );
+      //   res.writeHead(400, { Connection: 'close' });
+      //   res.end( JSON.stringify({
+      //     success: false,
+      //     error: `File ${fieldName} is too large!`,
+      //   }) );
   
-        // NOTE(jarrilla):
-        // not trying to delete files from fs since this seems to brick the next attempt
-        // when OS is trying to write to a file that got unlinked before OS deletes it, app hangs
-        // fieldNames.forEach(s => fs.unlinkSync( path.join(__dirname, s) ));
-      });
+      //   // NOTE(jarrilla):
+      //   // not trying to delete files from fs since this seems to brick the next attempt
+      //   // when OS is trying to write to a file that got unlinked before OS deletes it, app hangs
+      //   // fieldNames.forEach(s => fs.unlinkSync( path.join(__dirname, s) ));
+      // });
 
       // pipe to filesystem
+
+      const str = new PassThrough();
+
+      file.on('data', function(data) {
+        str.push(data);
+      });
+
+      file.on('end', function() {
+        str.end();
+      });
+
       const saveTo = path.join( __dirname, 'uploads', fileName );
-      file.pipe( fs.createWriteStream(saveTo) );
+      str.pipe( fs.createWriteStream(saveTo) );
+
+      
+      // file.
+      //   pipe( new PassThrough() ).
+      //   pipe( fs.createWriteStream(saveTo) );
+
+      
+      // file.pipe( fs.createWriteStream(saveTo, { flags: 'a' }) );
     });
   
     // done uploading. send 200
@@ -104,6 +128,11 @@ app.post('/upload', (req, res) => {
     console.error(e);
     res.sendStatus(500);
   }
+});
+
+app.put('/rfq', (_req, res) => {
+  console.debug('yo');
+  res.status(201).send({ rfqFolderId: '2' })
 });
 
 app.all('*', (_req, res) => res.sendStatus(404));
